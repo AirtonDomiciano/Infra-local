@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/AirtonDomiciano/envscout/internal/envfile"
 	"github.com/AirtonDomiciano/envscout/internal/scanner"
@@ -40,6 +41,11 @@ func main() {
 	fmt.Println("✅ Hosts encontrados:", results)
 	fmt.Println("🎯 Escolhido:", chosen)
 
+	if err := runRDP(chosen); err != nil {
+		fmt.Println("❌ Falha ao executar RDP:", err)
+		os.Exit(1)
+	}
+
 	if *envPath != "" {
 		if err := envfile.UpsertKey(*envPath, *key, chosen); err != nil {
 			fmt.Println("❌ Falha ao atualizar .env:", err)
@@ -47,4 +53,23 @@ func main() {
 		}
 		fmt.Printf("📝 Atualizado %s em %s => %s=%s\n", *key, *envPath, *key, chosen)
 	}
+}
+
+func runRDP(ip string) error {
+	args := []string{
+		"/v:" + ip,
+		"/u:airtonprg\\airton",
+		"/p:asd123",
+		"/sec:nla",
+		"/cert:ignore",
+		"/dynamic-resolution",
+		"/clipboard",
+		"/network:auto",
+	}
+
+	cmd := exec.Command("xfreerdp3", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
